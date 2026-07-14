@@ -1,0 +1,107 @@
+import torch
+import numpy as np
+import pdb
+import argparse
+from tqdm import tqdm
+
+import torch.nn as nn
+from torch.autograd import Variable
+import torch.backends.cudnn as cudnn
+from torch.optim.lr_scheduler import MultiStepLR
+
+from torchvision.utils import make_grid
+from torchvision import datasets, transforms
+
+
+# class Cutout(object):
+#     """Randomly mask out one or more patches from an image.
+#     Args:
+#         n_holes (int): Number of patches to cut out of each image.
+#         length (int): The length (in pixels) of each square patch.
+#     """
+#     def __init__(self, length, p=0.5):
+# #         self.n_holes = n_holes
+#         self.length = length
+#         self.p = p
+#         
+#     def __call__(self, img):
+#         """
+#         Args:
+#             img (Tensor): Tensor image of size (C, H, W).
+#         Returns:
+#             Tensor: Image with n_holes of dimension length x length cut out of it.
+#         """
+#         p_1 = np.random.rand()
+#         if p_1>self.p:
+#             return img
+#         
+#         c = img.size(0)
+#         h = img.size(1)
+#         w = img.size(2)
+#         l = self.length // 2
+# 
+# #         for n in range(self.n_holes):
+#         for i in range(c):
+#             y = np.random.randint(h)
+#             x = np.random.randint(w)
+# #             y = np.random.randint(l, h - l + 1)
+# #             x = np.random.randint(l, w - l + 1)
+#             mask = np.ones((h, w), np.float32)
+#             y1 = np.clip(y - self.length // 2, 0, h)
+#             y2 = np.clip(y + self.length // 2, 0, h)
+#             x1 = np.clip(x - self.length // 2, 0, w)
+#             x2 = np.clip(x + self.length // 2, 0, w)
+# 
+#             mask[y1: y2, x1: x2] = 0.
+# 
+#             mask = torch.Tensor(mask)
+#             mask = mask.expand_as(img[i])
+#             img[i] = img[i] * mask
+# 
+#         return img
+import torch
+import numpy as np
+
+
+class Cutout(object):
+    """Randomly mask out one or more patches from an image.
+    Args:
+        n_holes (int): Number of patches to cut out of each image.
+        length (int): The length (in pixels) of each square patch.
+    """
+    def __init__(self, n_holes, length):
+        self.n_holes = n_holes
+        self.length = length
+
+    def __call__(self, img):
+        """
+        Args:
+            img (Tensor): Tensor image of size (C, H, W).
+        Returns:
+            Tensor: Image with n_holes of dimension length x length cut out of it.
+        """
+        h = img.size(1)
+        w = img.size(2)
+
+        mask = np.ones((h, w), np.float32)
+
+        for n in range(self.n_holes):
+            y = np.random.randint(h)
+            x = np.random.randint(w)
+
+            y1 = np.clip(y - self.length // 2, 0, h)
+            y2 = np.clip(y + self.length // 2, 0, h)
+            x1 = np.clip(x - self.length // 2, 0, w)
+            x2 = np.clip(x + self.length // 2, 0, w)
+
+            mask[y1: y2, x1: x2] = 0.
+
+        mask = torch.from_numpy(mask)
+        mask = mask.expand_as(img)
+        img = img * mask
+
+        return img
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import math
